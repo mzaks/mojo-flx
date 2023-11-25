@@ -122,7 +122,7 @@ fn construct_one_mio_u64_vec_in_100000_x_10_table() raises:
         for i in range(100_000):
             var row = df^.vec()
             for j in range(10):
-                row = row^.add[DType.uint64](nums[i + j * 10])
+                row = row^.add[DType.uint64](nums[i + j * 100_000])
             df = row^.up_to_vec()
         let r = df^.finish()
         let tok = now()
