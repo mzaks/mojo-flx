@@ -55,38 +55,72 @@ fn construct_one_mio_f64_vec() raises:
     print("Constructed a vector of 1 Mio Float64", size, "bytes in", min_duration / 1_000_000, "ms")
 
 fn construct_one_mio_f16_vec() raises:
-    var nums = DynamicVector[Float16](1_000_000)
-    for _ in range(1_000_000):
+    let count = 1_000_000
+    var nums = DynamicVector[Float16](count)
+    for _ in range(count):
         nums.push_back(random_float64(0, 1 << 16).cast[DType.float16]())
     var size = 0
-    var min_duration = max_finite[DType.int64]().to_int()
+    var min_duration_create = max_finite[DType.int64]().to_int()
+    var min_duration_read = max_finite[DType.int64]().to_int()
     for _ in range(20):
-        let tik = now()
+        var tik = now()
         let r = flx[DType.float16](nums.data, len(nums))
-        let tok = now()
+        var tok = now()
+        min_duration_create = min(min_duration_create, tok - tik)
         size = r.get[1, Int]()
-        r.get[0, DTypePointer[DType.uint8]]().free()
-        min_duration = min(min_duration, tok - tik)
+        let bytes = r.get[0, DTypePointer[DType.uint8]]()
+        var read_duration = 0
+        tik = now()
+        let vec = FlxValue(bytes, size)
+        tok = now()
+        read_duration += tok - tik
+        for i in range(count):
+            tik = now()
+            let v = vec[i].get[DType.float16]()
+            tok = now()
+            read_duration += tok - tik
+            if v != nums[i]:
+                print("Error at index:", i)
+        min_duration_read = min(min_duration_read, read_duration)
+        bytes.free()
 
     # Adding 1 Mio Float16 values is slower, 
     # because FlexBuffers need to repack values (add 2 bytes padding) as length is represented in UInt32
-    print("Constructed a vector of 1 Mio Float16", size, "bytes in", min_duration / 1_000_000, "ms")
+    print("Constructed a vector of 1 Mio Float16", size, "bytes in", min_duration_create / 1_000_000, "ms")
+    print("Read a vector of 1 Mio Float16", size, "bytes in", min_duration_read / 1_000_000, "ms")
 
 fn construct_32k_f16_vec() raises:
-    var nums = DynamicVector[Float16](32_000)
-    for _ in range(32_000):
+    let count = 32_000
+    var nums = DynamicVector[Float16](count)
+    for _ in range(count):
         nums.push_back(random_float64(0, 1 << 16).cast[DType.float16]())
     var size = 0
-    var min_duration = max_finite[DType.int64]().to_int()
+    var min_duration_create = max_finite[DType.int64]().to_int()
+    var min_duration_read = max_finite[DType.int64]().to_int()
     for _ in range(20):
-        let tik = now()
+        var tik = now()
         let r = flx[DType.float16](nums.data, len(nums))
-        let tok = now()
+        var tok = now()
+        min_duration_create = min(min_duration_create, tok - tik)
         size = r.get[1, Int]()
-        r.get[0, DTypePointer[DType.uint8]]().free()
-        min_duration = min(min_duration, tok - tik)
+        let bytes = r.get[0, DTypePointer[DType.uint8]]()
+        var read_duration = 0
+        tik = now()
+        let vec = FlxValue(bytes, size)
+        tok = now()
+        read_duration += tok - tik
+        for i in range(count):
+            tik = now()
+            let v = vec[i].get[DType.float16]()
+            tok = now()
+            read_duration += tok - tik
+            if v != nums[i]:
+                print("Error at index:", i)
+        min_duration_read = min(min_duration_read, read_duration)
+        bytes.free()
 
-    print("Constructed a vector of 32K Float16", size, "bytes in", min_duration / 1_000_000, "ms")
+    print("Constructed a vector of 32K Float16", size, "bytes in", min_duration_create / 1_000_000, "ms")
+    print("Read a vector of 32K Float16", size, "bytes in", min_duration_read / 1_000_000, "ms")
 
 fn construct_one_mio_u64_vec_in_10_x_100000_table() raises:
     var nums = DynamicVector[UInt64](1_000_000)
