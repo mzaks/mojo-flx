@@ -2,7 +2,7 @@ from .data_types import StackValue, ValueBitWidth, padding_size, ValueType
 from .cache import Cache
 from memory import Buffer, memcpy, memset_zero
 from memory.unsafe import bitcast
-from math import min
+from math import max
 
 fn flx_null() -> (DTypePointer[DType.uint8], Int):
     var buffer = FlxBuffer(10)
@@ -30,7 +30,7 @@ fn flx_blob(v: DTypePointer[DType.uint8], length: Int) -> (DTypePointer[DType.ui
     return finish_ignoring_excetion(buffer^)
 
 fn flx[D: DType](v: DTypePointer[D], length: Int) -> (DTypePointer[DType.uint8], Int):
-    var buffer = FlxBuffer()
+        var buffer = FlxBuffer()
     buffer.add(v, length)
     return finish_ignoring_excetion(buffer^)
 
@@ -82,7 +82,7 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
         flx.add(v, length)
         return finish_ignoring_excetion(flx^)
 
-    fn __init__(inout self, size: UInt64 = 2048):
+    fn __init__(inout self, size: UInt64 = 1 << 11):
         self._size = size
         self._stack = DynamicVector[StackValue]()
         self._stack_positions = DynamicVector[Int]()
@@ -264,6 +264,7 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
         return byte_width
 
     fn _write(inout self, value: StackValue, byte_width: UInt64):
+        self._grow_bytes_if_needed(self._offset + byte_width)
         if value.is_offset():
             let rel_offset = self._offset - value.as_uint()
             # Safety check not implemented for now as it is internal call and should be safe
@@ -275,19 +276,25 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
             self._offset = new_offset
 
     fn _write(inout self, value: UInt64, byte_width: UInt64):
+        self._grow_bytes_if_needed(self._offset + byte_width)
         let new_offset = self._new_offset(byte_width)
         self._bytes.simd_store(self._offset.to_int(), bitcast[DType.uint8, 8](value))
         # We write 8 bytes but the offset is still set to byte_width
         self._offset = new_offset
 
     fn _write(inout self, value: UInt8):
+        self._grow_bytes_if_needed(self._offset + 1)
         let new_offset = self._new_offset(1)
         self._bytes.offset(self._offset.to_int()).store(value)
         self._offset = new_offset
 
     fn _new_offset(inout self, byte_width: UInt64) -> UInt64:
         let new_offset = self._offset + byte_width
-        let min_size = self._offset + min(byte_width, 8)
+        let min_size = self._offset + max(byte_width, 8)
+        self._grow_bytes_if_needed(min_size)
+        return new_offset
+
+    fn _grow_bytes_if_needed(inout self, min_size: UInt64):
         let prev_size = self._size
         while self._size < min_size:
             self._size <<= 1
@@ -296,7 +303,6 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
             self._bytes = DTypePointer[DType.uint8].alloc(self._size.to_int())
             memcpy(self._bytes, prev_bytes, self._offset.to_int())
             prev_bytes.free()
-        return new_offset
 
     fn _end_vector(inout self, position: Int) raises:
         let length = len(self._stack) - position
@@ -404,6 +410,7 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
 fn finish_ignoring_excetion(owned flx: FlxBuffer) -> (DTypePointer[DType.uint8], Int):
     try:
         return flx^.finish()
-    except:
+    except e:
         # should never happen
+        print("Unexpected error:", e)
         return DTypePointer[DType.uint8](), -1
