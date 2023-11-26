@@ -46,42 +46,6 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
     var _key_cache: Cache
     var _keys_vec_cache: Cache
 
-    @staticmethod
-    fn null() -> (DTypePointer[DType.uint8], Int):
-        var flx = FlxBuffer(10)
-        flx.add_null()
-        return finish_ignoring_excetion(flx^)
-        
-    @staticmethod
-    fn of(v: Int) -> (DTypePointer[DType.uint8], Int):
-        var flx = FlxBuffer(10)
-        flx.add(v)
-        return finish_ignoring_excetion(flx^)
-    
-    @staticmethod
-    fn of[D: DType](v: SIMD[D, 1]) -> (DTypePointer[DType.uint8], Int):
-        var flx = FlxBuffer(10)
-        flx.add(v)
-        return finish_ignoring_excetion(flx^)
-
-    @staticmethod
-    fn of(v: String) -> (DTypePointer[DType.uint8], Int):
-        var flx = FlxBuffer(len(v) + 10)
-        flx.add(v)
-        return finish_ignoring_excetion(flx^)
-
-    @staticmethod
-    fn from_bytes(v: DTypePointer[DType.uint8], length: Int) -> (DTypePointer[DType.uint8], Int):
-        var flx = FlxBuffer(length + 10)
-        flx.blob(v, length)
-        return finish_ignoring_excetion(flx^)
-
-    @staticmethod
-    fn of[D: DType](v: DTypePointer[D], length: Int) -> (DTypePointer[DType.uint8], Int):
-        var flx = FlxBuffer()
-        flx.add(v, length)
-        return finish_ignoring_excetion(flx^)
-
     fn __init__(inout self, size: UInt64 = 1 << 11):
         self._size = size
         self._stack = DynamicVector[StackValue]()
