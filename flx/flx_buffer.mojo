@@ -5,32 +5,32 @@ from memory.unsafe import bitcast
 from math import max
 
 fn flx_null() -> (DTypePointer[DType.uint8], Int):
-    var buffer = FlxBuffer(10)
+    var buffer = FlxBuffer(16)
     buffer.add_null()
     return finish_ignoring_excetion(buffer^)
 
 fn flx(v: Int) -> (DTypePointer[DType.uint8], Int):
-    var buffer = FlxBuffer(10)
+    var buffer = FlxBuffer(16)
     buffer.add(v)
     return finish_ignoring_excetion(buffer^)
 
 fn flx[D: DType](v: SIMD[D, 1]) -> (DTypePointer[DType.uint8], Int):
-    var buffer = FlxBuffer(10)
+    var buffer = FlxBuffer(16)
     buffer.add(v)
     return finish_ignoring_excetion(buffer^)
 
 fn flx(v: String) -> (DTypePointer[DType.uint8], Int):
-    var buffer = FlxBuffer()
+    var buffer = FlxBuffer(len(v) + 16)
     buffer.add(v)
     return finish_ignoring_excetion(buffer^)
 
 fn flx_blob(v: DTypePointer[DType.uint8], length: Int) -> (DTypePointer[DType.uint8], Int):
-    var buffer = FlxBuffer()
+    var buffer = FlxBuffer(length + 32)
     buffer.blob(v, length)
     return finish_ignoring_excetion(buffer^)
 
 fn flx[D: DType](v: DTypePointer[D], length: Int) -> (DTypePointer[DType.uint8], Int):
-        var buffer = FlxBuffer()
+    var buffer = FlxBuffer(length * sizeof[D]() + 1024)
     buffer.add(v, length)
     return finish_ignoring_excetion(buffer^)
 
