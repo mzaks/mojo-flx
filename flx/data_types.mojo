@@ -15,10 +15,13 @@ struct ValueBitWidth:
 
     alias min8 = min_finite[DType.int8]().to_int()
     alias max8 = max_finite[DType.int8]().to_int()
+    alias umax8 = max_finite[DType.uint8]().cast[DType.uint64]()
     alias min16 = min_finite[DType.int16]().to_int()
     alias max16 = max_finite[DType.int16]().to_int()
+    alias umax16 = max_finite[DType.uint16]().cast[DType.uint64]()
     alias min32 = min_finite[DType.int32]().to_int()
     alias max32 = max_finite[DType.int32]().to_int()
+    alias umax32 = max_finite[DType.uint32]().cast[DType.uint64]()
 
     var value: UInt8
 
@@ -57,6 +60,20 @@ struct ValueBitWidth:
                 return ValueBitWidth.width16
         else:
             if Self.min32 <= n <= Self.max32:
+                return ValueBitWidth.width32
+            else:
+                return ValueBitWidth.width64
+    
+    @always_inline
+    @staticmethod
+    fn of(n: UInt64) -> ValueBitWidth:
+        if n <= Self.umax16:
+            if n <= Self.umax8:
+                return ValueBitWidth.width8
+            else:
+                return ValueBitWidth.width16
+        else:
+            if n <= Self.umax32:
                 return ValueBitWidth.width32
             else:
                 return ValueBitWidth.width64
@@ -219,7 +236,7 @@ struct StackValue:
         var value = SIMD[DType.uint8, 8](0)
         @parameter
         if D == DType.bool:
-            value[0] = 1 if v else 0
+            value[0] = v.cast[DType.uint8]()
             return StackValue(value, ValueBitWidth.of(v), ValueType.of[D]())
         elif D == DType.uint8 or D == DType.int8:
             let v1 = bitcast[DType.uint8, 1](v)
@@ -291,6 +308,68 @@ struct StackValue:
     @always_inline
     fn as_uint(self) -> UInt64:
         return bitcast[DType.uint64, 1](self.value)
+
+    fn to_value(self, byte_width: UInt64) -> SIMD[DType.uint8, 8]:
+        let self_byte_width = (1 << self.width.value).cast[DType.uint64]()
+        if self_byte_width == byte_width or self.type == ValueType.UInt:
+            return self.value
+        else:
+            if self_byte_width > 2:
+                if self_byte_width == 4:
+                    var v = SIMD[DType.uint8, 4](0)
+                    v[0] = self.value[0]
+                    v[1] = self.value[1]
+                    v[2] = self.value[2]
+                    v[3] = self.value[3]
+                    if byte_width == 2:
+                        if self.type == ValueType.Float:
+                            return StackValue.of(bitcast[DType.float32, 1](v).cast[DType.float16]()).value
+                        else:
+                            return StackValue.of(bitcast[DType.int32, 1](v).cast[DType.int16]()).value
+                    else:
+                        # byte_width == 8
+                        if self.type == ValueType.Float:
+                            return StackValue.of(bitcast[DType.float32, 1](v).cast[DType.float64]()).value
+                        else:
+                            return StackValue.of(bitcast[DType.int32, 1](v).cast[DType.int64]()).value
+                else:
+                    # self_byte_width == 8
+                    if byte_width == 2:
+                        if self.type == ValueType.Float:
+                            return StackValue.of(bitcast[DType.float64, 1](self.value).cast[DType.float16]()).value
+                        else:
+                            return StackValue.of(bitcast[DType.int64, 1](self.value).cast[DType.int16]()).value
+                    else:
+                        if self.type == ValueType.Float:
+                            return StackValue.of(bitcast[DType.float64, 1](self.value).cast[DType.float32]()).value
+                        else:
+                            return StackValue.of(bitcast[DType.int64, 1](self.value).cast[DType.int32]()).value
+            else:
+                if self_byte_width == 2:
+                    var v = SIMD[DType.uint8, 2](0)
+                    v[0] = self.value[0]
+                    v[1] = self.value[1]
+                    if byte_width == 4:
+                        if self.type == ValueType.Float:
+                            return StackValue.of(bitcast[DType.float16, 1](v).cast[DType.float32]()).value
+                        else:
+                            return StackValue.of(bitcast[DType.int16, 1](v).cast[DType.int32]()).value
+                    else:
+                        if self.type == ValueType.Float:
+                            return StackValue.of(bitcast[DType.float16, 1](v).cast[DType.float64]()).value
+                        else:
+                            return StackValue.of(bitcast[DType.int16, 1](v).cast[DType.int64]()).value
+                else:
+                    if byte_width > 2:
+                        if byte_width == 4:
+                            return StackValue.of(bitcast[DType.int8, 1](self.value[0]).cast[DType.int32]()).value
+                        else:
+                            return StackValue.of(bitcast[DType.int8, 1](self.value[0]).cast[DType.int64]()).value
+                    else:
+                        if byte_width == 2:
+                            return StackValue.of(bitcast[DType.int8, 1](self.value[0]).cast[DType.int16]()).value
+                        else:
+                            return self.value
 
     @always_inline
     fn is_float32(self) -> Bool:

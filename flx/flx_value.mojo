@@ -101,8 +101,8 @@ struct FlxValue:
     fn get[D: DType](self) raises -> SIMD[D, 1]:
         if self._type != ValueType.of[D]():
             raise "Value is not of type " + D.__str__() + " type id: " + String(self._type.value)
-        if sizeof[D]() > self._parent_byte_width.to_int():
-            raise "Value byte width is " + String(self._parent_byte_width) + " which does not conform with " + D.__str__()
+        if sizeof[D]() != self._parent_byte_width.to_int():
+            raise "Value byte width is " + String(self._parent_byte_width.to_int()) + " which does not conform with " + D.__str__()
         @parameter
         if is_be:
             return bswap(self._bytes.bitcast[D]().load())
@@ -131,6 +131,12 @@ struct FlxValue:
             let p = jump_to_indirect(self._bytes, self._parent_byte_width)
             return read_float(p, self._byte_width)
         raise "Type is not a float, type id: " + String(self._type.value)
+
+    @always_inline
+    fn bool(self) raises -> Bool:
+        if self._type == ValueType.Bool:
+            return read_uint(self._bytes, self._parent_byte_width) == 1
+        raise "Type is not a bool, type id: " + String(self._type.value)
 
     @always_inline
     fn string(self) raises -> String:

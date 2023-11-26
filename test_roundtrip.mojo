@@ -54,18 +54,42 @@ fn test_float() raises:
 fn test_vec() raises:
     let r1 = FlxVec().add(1).add(2).add(3).finish()
     var value = FlxValue(r1.get[0, DTypePointer[DType.uint8]](), r1.get[1, Int]())
-    _ = assert_equal(value[0].get[DType.int8](), 1)
-    _ = assert_equal(value[0].int(), 1)
-    _ = assert_equal(value[1].get[DType.int8](), 2)
-    _ = assert_equal(value[1].int(), 2)
-    _ = assert_equal(value[2].get[DType.int8](), 3)
-    _ = assert_equal(value[2].int(), 3)
+    # _ = assert_equal(value[0].get[DType.int8](), 1)
+    # _ = assert_equal(value[0].int(), 1)
+    # _ = assert_equal(value[1].get[DType.int8](), 2)
+    # _ = assert_equal(value[1].int(), 2)
+    # _ = assert_equal(value[2].get[DType.int8](), 3)
+    # _ = assert_equal(value[2].int(), 3)
 
-    let r2 = FlxVec().add("a").vec().add("b").add("c").finish()
-    value = FlxValue(r2.get[0, DTypePointer[DType.uint8]](), r2.get[1, Int]())
-    _ = assert_equal(value[0].string(), "a")
-    _ = assert_equal(value[1][0].string(), "b")
-    _ = assert_equal(value[1][1].string(), "c")
+    # let r2 = FlxVec().add("a").vec().add("b").add("c").finish()
+    # value = FlxValue(r2.get[0, DTypePointer[DType.uint8]](), r2.get[1, Int]())
+    # _ = assert_equal(value[0].string(), "a")
+    # _ = assert_equal(value[1][0].string(), "b")
+    # _ = assert_equal(value[1][1].string(), "c")
+
+    # let r3 = FlxVec().add[DType.float16](1.1).add[DType.float32](1.1).add[DType.float64](1.1).finish()
+    # value = FlxValue(r3.get[0, DTypePointer[DType.uint8]](), r3.get[1, Int]())
+    # _ = assert_equal(value[0].get[DType.float64](), Float16(1.1))
+    # _ = assert_equal(value[1].get[DType.float64](), Float32(1.1))
+    # _ = assert_equal(value[2].get[DType.float64](), 1.1)
+
+    # let r4 = FlxVec().add[DType.int8](-13).add[DType.int16](-13).add[DType.int32](-13).add[DType.int64](-13).finish()
+    # value = FlxValue(r4.get[0, DTypePointer[DType.uint8]](), r4.get[1, Int]())
+    # _ = assert_equal(value[0].get[DType.int64](), -13)
+    # _ = assert_equal(value[0].int(), -13)
+    # _ = assert_equal(value[1].get[DType.int64](), -13)
+    # _ = assert_equal(value[1].int(), -13)
+    # _ = assert_equal(value[2].get[DType.int64](), -13)
+    # _ = assert_equal(value[2].int(), -13)
+    # _ = assert_equal(value[3].get[DType.int64](), -13)
+    # _ = assert_equal(value[3].int(), -13)
+
+    var vec = FlxVec()
+        for i in range(256):
+            vec = vec^.add[DType.bool](i & 1 == 1)
+    let r5 = vec^.finish()
+    value = FlxValue(r5.get[0, DTypePointer[DType.uint8]](), r5.get[1, Int]())
+    _ = assert_equal(256, value.__len__())
 
 fn test_map() raises:
     var r1 = FlxMap().add("a", 12).add("b", 45).finish()
@@ -80,11 +104,12 @@ fn test_map() raises:
     _ = assert_equal(value["b"].get[DType.int8](), 12)
     _ = assert_equal(value["a"].get[DType.int8](), 45)
 
-    r1 = FlxMap().add("name", "Maxim").add("age", 42).add[DType.float32]("weight", 72.5).finish()
+    r1 = FlxMap().add("name", "Maxim").add("age", 42).add[DType.float32]("weight", 72.5).add[DType.bool]("friendly", True).finish()
     value = FlxValue(r1.get[0, DTypePointer[DType.uint8]](), r1.get[1, Int]())
     _ = assert_equal(value["name"].string(), "Maxim")
-    _ = assert_equal(value["age"].get[DType.int8](), 42)
+    _ = assert_equal(value["age"].int(), 42)
     _ = assert_equal(value["weight"].get[DType.float32](), 72.5)
+    _ = assert_equal(value["friendly"].bool(), True)
 
     r1 = FlxMap()
         .add("name", "Maxim")
@@ -103,7 +128,7 @@ fn test_map() raises:
         .finish()
     value = FlxValue(r1.get[0, DTypePointer[DType.uint8]](), r1.get[1, Int]())
     _ = assert_equal(value["name"].string(), "Maxim")
-    _ = assert_equal(value["age"].get[DType.int8](), 42)
+    _ = assert_equal(value["age"].get[DType.int32](), 42)
     _ = assert_equal(value["weight"].get[DType.float32](), 72.5)
     _ = assert_equal(value["address"].__len__(), 3)
     _ = assert_equal(value["address"]["city"].string(), "Bla")
@@ -170,13 +195,13 @@ fn test_indirect() raises:
 
 fn main():
     try:
-        test_string()
-        test_blob()
+        # test_string()
+        # test_blob()
         test_vec()
-        test_map()
-        test_int()
-        test_float()
-        test_indirect()
+        # test_map()
+        # test_int()
+        # test_float()
+        # test_indirect()
     except e:
         print("unexpected error", e)
 

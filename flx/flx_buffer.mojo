@@ -272,7 +272,7 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
             self._write(rel_offset, byte_width)
         else:
             let new_offset = self._new_offset(byte_width)
-            self._bytes.simd_store(self._offset.to_int(), value.value)
+            self._bytes.simd_store(self._offset.to_int(), value.to_value(byte_width))
             self._offset = new_offset
 
     fn _write(inout self, value: UInt64, byte_width: UInt64):
@@ -370,7 +370,7 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
         return (result, size)
 
     fn _create_vector(inout self, start: Int, length: Int, step: Int, keys: StackValue = StackValue.Null) raises -> StackValue:
-        var bit_width = ValueBitWidth.of(length)
+        var bit_width = ValueBitWidth.of(UInt64(length))
         var prefix_elements = 1
         if keys != StackValue.Null:
             prefix_elements += 2
@@ -394,7 +394,7 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
         if keys != StackValue.Null:
             self._write(keys, byte_width)
             self._write((1 << keys.width.value).to_int(), byte_width)
-        self._write(length, byte_width)
+        self._write(UInt64(length), byte_width)
         let offset = self._offset
         for i in range(start, len(self._stack), step):
             self._write(self._stack[i], byte_width)
