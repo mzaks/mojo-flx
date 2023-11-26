@@ -97,7 +97,7 @@ except e:
 Given a DTypePointer[DType.uint8] which points to the start of the FlexBuffer and the length, we can instantiate a `FlxValue` struct which can be used to access values inside of the buffer. 
 
 User can inspect the type of the `FlxValue` by calling one of the following methods:
-- `is_nul`
+- `is_null`
 - `is_a[D: DType]`
 - `is_map`
 - `is_vec`
