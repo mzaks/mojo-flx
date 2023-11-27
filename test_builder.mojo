@@ -208,14 +208,14 @@ fn test_map_builder():
 
 fn test_vec_builder():
     try:
-        # assert_result(
-        #     FlxVec().vec().add(61).up_to_vec().add(64).finish(),
-        #     1, 61, 2, 2, 64, 44, 4, 4, 40, 1
-        # )
-        # assert_result(
-        #     FlxVec().add(1).add_indirect[DType.int32](2333).add(3).finish(),
-        #     29, 9, 0, 0, 3, 1, 6, 3, 4, 26, 4, 6, 40, 1 
-        # )
+        assert_result(
+            FlxVec().vec().add(61).up_to_vec().add(64).finish(),
+            1, 61, 2, 2, 64, 44, 4, 4, 40, 1
+        )
+        assert_result(
+            FlxVec().add(1).add_indirect[DType.int32](2333).add(3).finish(),
+            29, 9, 0, 0, 3, 1, 6, 3, 4, 26, 4, 6, 40, 1 
+        )
         var vec = FlxVec()
         for i in range(256):
             vec = vec^.add[DType.bool](i & 1 == 1)
@@ -370,14 +370,14 @@ fn test_dedup_key():
         print("unexpected error", e)
 
 fn main():
-    # test_single_value_contructor()
-    # test_vec_construction()
-    # test_map_construction()
-    # test_map_builder()
+    test_single_value_contructor()
+    test_vec_construction()
+    test_map_construction()
+    test_map_builder()
     test_vec_builder()
-    # test_blob()
-    # test_dedup_string()
-    # test_dedup_key()
+    test_blob()
+    test_dedup_string()
+    test_dedup_key()
 
 
     var v = DynamicVector[UInt16](1000)
