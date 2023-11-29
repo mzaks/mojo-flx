@@ -91,8 +91,12 @@ fn main():
     try:
         construct_and_read_vec[1_000_000, DType.uint64]()
         construct_and_read_vec[1_000_000, DType.uint32]()
+        construct_and_read_vec[2_000_000, DType.uint32]()
         construct_and_read_vec[1_000_000, DType.uint16, DType.uint32]()
+        construct_and_read_vec[2_000_000, DType.uint16, DType.uint32]()
         construct_and_read_vec[1_000_000, DType.uint8, DType.uint32]()
+        construct_and_read_vec[2_000_000, DType.uint8, DType.uint32]()
+        construct_and_read_vec[4_000_000, DType.uint8, DType.uint32]()
         construct_and_read_vec[1_000_000, DType.int64]()
         construct_and_read_vec[1_000_000, DType.int32]()
         construct_and_read_vec[1_000_000, DType.int16, DType.int32]()

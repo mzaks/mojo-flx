@@ -90,6 +90,15 @@ fn test_vec() raises:
     let r5 = vec^.finish()
     value = FlxValue(r5.get[0, DTypePointer[DType.uint8]](), r5.get[1, Int]())
     _ = assert_equal(256, value.__len__())
+    for i in range(256):
+        _ = assert_equal(i & 1 == 1, value[i].bool())
+
+    let r6 = FlxVec().add[DType.int32](1234).add("maxim").add[DType.float16](1.5).add[DType.bool](True).finish()
+    value = FlxValue(r6.get[0, DTypePointer[DType.uint8]](), r6.get[1, Int]())
+    _ = assert_equal(value[0].int(), 1234)
+    _ = assert_equal(value[1].string(), "maxim")
+    _ = assert_equal(value[2].get[DType.float32](), 1.5)
+    _ = assert_equal(value[3].bool(), True)
 
 fn test_map() raises:
     var r1 = FlxMap().add("a", 12).add("b", 45).finish()
