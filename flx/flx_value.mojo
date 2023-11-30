@@ -32,6 +32,19 @@ struct FlxValue:
         self._byte_width = 1 << (packed_type & 3)
         self._type = ValueType(packed_type >> 2)
 
+    fn __init__(inout self, bytes_and_length: (DTypePointer[DType.uint8], Int)) raises:
+        let bytes = bytes_and_length.get[0, DTypePointer[DType.uint8]]()
+        let length = bytes_and_length.get[1, Int]()
+        if length < 3:
+            raise "Length should be at least 3, was: " + String(length)
+        let parent_byte_width = bytes.load(length - 1)
+        let packed_type = bytes.load(length - 2)
+        let offset = length - parent_byte_width.to_int() - 2
+        self._bytes = bytes.offset(offset)
+        self._parent_byte_width = parent_byte_width
+        self._byte_width = 1 << (packed_type & 3)
+        self._type = ValueType(packed_type >> 2)
+
     fn __moveinit__(inout self, owned other: Self):
         self._bytes = other._bytes
         self._parent_byte_width = other._parent_byte_width
@@ -199,6 +212,38 @@ struct FlxValue:
     @always_inline
     fn __getitem__(self, key: String) raises -> FlxValue:
         return self.map()[key]
+
+    fn json(self) raises -> String:
+        if self.is_null():
+            return "null"
+        if self.is_bool():
+            return "true" if self.bool() else "false"
+        if self.is_int():
+            return self.int()
+        if self.is_float():
+            return self.float()
+        if self.is_string():
+            return '"' + self.string() + '"'
+        if self.is_vec():
+            var result: String = "["
+            for i in range(self.__len__()):
+                result += self[i].json()
+                if i < self.__len__() - 1:
+                    result += ","
+            result += "]"
+            return result
+        if self.is_map():
+            var result: String = "{"
+            let map = self.map()
+            let keys = map.keys()
+            let values = map.values()
+            for i in range(self.__len__()):
+                result += '"' + keys[i].string() + '":' + values[i].json()
+                if i < self.__len__() - 1:
+                    result += ","
+            result += "}"
+            return result
+        raise "Unexpected type id: " + String(self._type.value)
 
 
 struct FlxVecValue:

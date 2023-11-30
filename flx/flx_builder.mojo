@@ -116,6 +116,10 @@ struct FlxVec[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_vec:
         self.buffer.start_vector()
         return self^
 
+    fn null(owned self) -> Self:
+        self.buffer.add_null()
+        return self^
+
     fn up_to_map(owned self) raises -> FlxMap[dedup_string, dedup_key, dedup_keys_vec]:
         # TODO: investigate ownership transfer instead of copy
         var buffer = self.buffer
