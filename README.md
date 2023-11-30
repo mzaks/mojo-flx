@@ -325,7 +325,7 @@ results in:
 - `4, 44` are the packed type information of the first element `Int` and second element `VectorInt`
 - `4, 40, 1` is the pointer to the outer vector, packed typed `Vector` + `width8` and the byte width of the pointer 
 
-# Storing a key/value map
+### Storing a key/value map
 FlexBuffers implements a key/value map with two vectors, a vector of keys and an untyped vector for values. The key and value elements are added to the respective vectors at the same time, so when we find the expected key, we use its index to lookup the corresponding value. In order to speedup the lookup, the vectors are sorted based on the key values and the lookup is done through a binary search.
 
 Lets have a look at a simple key/value map example:
