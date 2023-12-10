@@ -1,6 +1,6 @@
 from .flx_buffer import FlxBuffer
 
-struct FlxMap[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_vec: Bool = True]:
+struct FlxMap[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_vec: Bool = True](Movable):
     var buffer: FlxBuffer[dedup_string, dedup_key, dedup_keys_vec]
 
     fn __init__(inout self, owned buffer: FlxBuffer[dedup_string, dedup_key, dedup_keys_vec]):
@@ -73,7 +73,7 @@ struct FlxMap[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_vec:
     fn finish(owned self) raises -> (DTypePointer[DType.uint8], Int):
         return self.buffer._finish()
 
-struct FlxVec[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_vec: Bool = True]:
+struct FlxVec[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_vec: Bool = True](Movable):
     var buffer: FlxBuffer[dedup_string, dedup_key, dedup_keys_vec]
 
     fn __init__(inout self, owned buffer: FlxBuffer[dedup_string, dedup_key, dedup_keys_vec]):

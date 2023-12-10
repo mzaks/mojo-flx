@@ -1,11 +1,22 @@
 from memory import memset_zero, memcpy
 from .data_types import StackValue
 
-alias Key = (DTypePointer[DType.uint8], Int)
+@value
+struct Key(CollectionElement):
+    var pointer: DTypePointer[DType.uint8]
+    var size: Int
+
+    fn __init__(inout self, pointer: DTypePointer[DType.uint8], size: Int):
+        let cp = DTypePointer[DType.uint8].alloc(size)
+        memcpy(cp, pointer, size)
+        self.pointer = cp
+        self.size = size
+
+# alias Key = (DTypePointer[DType.uint8], Int)
 alias Keys = DynamicVector[Key]
 alias Values = DynamicVector[StackValue]
 
-struct Cache:
+struct Cache(Movable, Copyable):
     var keys: Keys
     var values: Values
     var key_map: DTypePointer[DType.uint32]
@@ -23,34 +34,34 @@ struct Cache:
     fn __moveinit__(inout self, owned other: Self):
         self.count = other.count^
         self.capacity = other.capacity^
-        self.keys = other.keys^
         self.values = other.values^
         self.key_map = other.key_map^
+        self.keys = other.keys^
 
     fn __copyinit__(inout self, other: Self):
         self.count = other.count
         self.capacity = other.capacity
-
-        self.keys = Keys(len(other.keys))
-        for i in range(len(other.keys)):
-            let key = other.keys[i]
-            let p = key.get[0, DTypePointer[DType.uint8]]()
-            let size = key.get[1, Int]()
-            let cp = DTypePointer[DType.uint8].alloc(size)
-            memcpy(cp, p, size)
-            let new_key = (cp, size)
-            self.keys.push_back(new_key)
-
-        self.values = other.values
+        let keys_count = len(other.keys)
         
         self.key_map = DTypePointer[DType.uint32].alloc(self.capacity)
         memcpy(self.key_map, other.key_map, self.capacity)
+        self.keys = Keys(keys_count)
+        self.values = Values(keys_count)
+        for i in range(keys_count):
+            let key = other.keys[i]
+            let p = key.pointer
+            let size = key.size
+            let cp = DTypePointer[DType.uint8].alloc(size)
+            memcpy(cp, p, size)
+            let new_key = Key(cp, size)
+            self.keys.push_back(new_key)
+            self.values.push_back(other.values[i])
 
     fn __del__(owned self):
         self.key_map.free()
         for i in range(len(self.keys)):
             let key = self.keys[i]
-            key.get[0, DTypePointer[DType.uint8]]().free()
+            key.pointer.free()
 
     fn put(inout self, key: Key, value: StackValue):
         if self.count / self.capacity >= 0.8:
@@ -83,7 +94,6 @@ struct Cache:
                     new_key_index = len(self.keys)
                 else:
                     new_key_index = rehash_index
-
                 self.key_map.offset(key_map_index).store(UInt32(new_key_index))
                 return
 
@@ -96,8 +106,8 @@ struct Cache:
 
     fn _hash(self, key: Key) -> UInt32:
         var hash: UInt32 = 0
-        var bytes = key.get[0, DTypePointer[DType.uint8]]()
-        var count = key.get[1, Int]()
+        var bytes = key.pointer
+        var count = key.size
         while count >= 4:
             let c = bytes.bitcast[DType.uint32]().load()
             hash = _hash_word32(hash, c)
@@ -114,10 +124,10 @@ struct Cache:
         return hash
 
     fn _eq(self, a: Key, b: Key) -> Bool:
-        var bytes_a = a.get[0, DTypePointer[DType.uint8]]()
-        var bytes_b = b.get[0, DTypePointer[DType.uint8]]()
-        let count_a = a.get[1, Int]()
-        let count_b = b.get[1, Int]()
+        var bytes_a = a.pointer
+        var bytes_b = b.pointer
+        let count_a = a.size
+        let count_b = b.size
         if count_a != count_b:
             return False
         var count = count_a
@@ -160,16 +170,16 @@ fn _hash_word32(value: UInt32, word: UInt32) -> UInt32:
     return (rotate_bits_left[ROTATE](value) ^ word) * SEED32
 
 fn _key_string(key: Key) -> String:
-    let bytes = key.get[0, DTypePointer[DType.uint8]]()
-    let count = key.get[1, Int]()
+    let bytes = key.pointer
+    let count = key.size
     var result: String = ""
     for i in range(count):
         result += chr(bytes.load(i).to_int())
     return result
 
 fn _key_int_string(key: Key) -> String:
-    let bytes = key.get[0, DTypePointer[DType.uint8]]()
-    let count = key.get[1, Int]()
+    let bytes = key.pointer
+    let count = key.size
     var result: String = ""
     for i in range(count):
         result += String(bytes.load(i).to_int())

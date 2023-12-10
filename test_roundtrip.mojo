@@ -7,10 +7,12 @@ fn test_string() raises:
     _ = assert_equal("Hello world", value.string())
 
 fn test_blob() raises:
-    var data = DynamicVector[UInt8](1001)
+    let data = DTypePointer[DType.uint8].alloc(1001)
     for i in range(1001):
-        data.push_back(5)
-    let r = flx_blob(data.data, 1001)
+        data[i] = 5
+    
+    let r = flx_blob(data, 1001)
+    
     let value = FlxValue(r.get[0, DTypePointer[DType.uint8]](), r.get[1, Int]())
     let blob = value.blob()
     _ = assert_equal(blob.get[1, Int](), 1001)
@@ -85,8 +87,8 @@ fn test_vec() raises:
     _ = assert_equal(value[3].int(), -13)
 
     var vec = FlxVec()
-        for i in range(256):
-            vec = vec^.add[DType.bool](i & 1 == 1)
+    for i in range(256):
+        vec = vec^.add[DType.bool](i & 1 == 1)
     let r5 = vec^.finish()
     value = FlxValue(r5.get[0, DTypePointer[DType.uint8]](), r5.get[1, Int]())
     _ = assert_equal(256, value.__len__())

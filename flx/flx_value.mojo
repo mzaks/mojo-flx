@@ -325,7 +325,7 @@ struct FlxMapValue:
 
     @always_inline
     fn key_index(self, key: String) raises -> Int:
-        let a = DTypePointer[DType.int8](key._buffer.data).bitcast[DType.uint8]()
+        let a = key._as_ptr().bitcast[DType.uint8]()
         let keys = self.keys()
         var low = 0
         var high = self._length - 1

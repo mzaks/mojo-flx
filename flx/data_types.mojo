@@ -222,7 +222,7 @@ struct ValueType:
 
 @value
 @register_passable("trivial")
-struct StackValue:
+struct StackValue(CollectionElement):
     var value: SIMD[DType.uint8, 8]
     var width: ValueBitWidth
     var type: ValueType

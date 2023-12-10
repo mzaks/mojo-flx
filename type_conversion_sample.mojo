@@ -1,5 +1,6 @@
 from random import random_si64
 from flx import FlxVec, FlxValue
+from memory.unsafe import bitcast
 
 fn convert_dynamic_vector() raises:
     var v = DynamicVector[Int32]()
@@ -8,7 +9,7 @@ fn convert_dynamic_vector() raises:
 
     let flx_result = FlxVec()
         .add("vec_i32")
-        .add(DTypePointer[DType.int32](v.data).bitcast[DType.uint8](), len(v) * sizeof[Int32]())
+        .add(rebind[DTypePointer[DType.int32]](v.data).bitcast[DType.uint8](), len(v) * sizeof[Int32]())
         .finish()
     
     print("Buffer size:", flx_result.get[1, Int]())
@@ -18,8 +19,11 @@ fn convert_dynamic_vector() raises:
     let blob = value[1].blob()
     let size = blob.get[1, Int]() / 4
     let bytes = blob.get[0, DTypePointer[DType.uint8]]()
-    
-    let v1 = DynamicVector(bytes.bitcast[DType.int32]()._as_scalar_pointer(), size.to_int())
+    let bytes32 = bytes.bitcast[DType.int32]()
+    var v1 = DynamicVector[Int32](size.to_int())
+    for i in range(size.to_int()):
+        v1.push_back(bytes32.offset(i).load())
+
     if len(v) != len(v1):
         print("Error! Lengths are not equal", len(v), len(v1))
         return
