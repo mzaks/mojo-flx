@@ -33,41 +33,47 @@ fn vec[D: DType](*values: SIMD[D, 1]) -> DynamicVector[SIMD[D, 1]]:
     return result
 
 fn test_single_value_contructor():
-    assert_result(flx_null(), 0, 0, 1)
-    assert_result(flx(25), 25, 4, 1)
-    assert_result(flx(-25), 231, 4, 1)
-    assert_result(flx(230), 230, 0, 5, 2)
-    assert_result(flx(-230), 26, 255, 5, 2)
-    assert_result(flx[DType.uint8](230), 230, 8, 1)
-    assert_result(flx[DType.uint16](230), 230, 0, 9, 2)
-    assert_result(flx[DType.uint32](230), 230, 0, 0, 0, 10, 4)
-    assert_result(flx[DType.uint64](230), 230, 0, 0, 0, 0, 0, 0, 0, 11, 8)
-    assert_result(flx[DType.bool](True), 1, 104, 1)
-    assert_result(flx[DType.bool](False), 0, 104, 1)
-    assert_result(flx[DType.float16](4.5), 128, 68, 13, 2)
-    assert_result(flx[DType.float32](4.5), 0, 0, 144, 64, 14, 4)
-    assert_result(flx[DType.float32](0.1), 205, 204, 204, 61, 14, 4)
-    assert_result(flx("Maxim"), 5, 77, 97, 120, 105, 109, 0, 6, 20, 1)
-    assert_result(flx("hello 😱"), 10, 104, 101, 108, 108, 111, 32, 240, 159, 152, 177, 0, 11, 20, 1)
-    assert_result(flx("hello 🔥"), 10, 104, 101, 108, 108, 111, 32, 240, 159, 148, 165, 0, 11, 20, 1)
-    # var v1 = vec[DType.int8](1, 2, 3)
-    # assert_result(flx(rebind[DTypePointer[DType.int8]](v1.data), len(v1)), 3, 1, 2, 3, 3, 44, 1)
-    # v1 = vec[DType.int8](-1, 2, 3)
-    # assert_result(flx(rebind[DTypePointer[DType.int8]](v1.data), len(v1)), 3, 255, 2, 3, 3, 44, 1)
-    # let v2 = vec[DType.int16](1, 555, 3)
-    # assert_result(flx(rebind[DTypePointer[DType.int16]](v2.data), len(v2)), 3, 0, 1, 0, 43, 2, 3, 0, 6, 45, 1)
-    # let v4 = vec[DType.int32](1, 55500, 3)
-    # assert_result(
-    #     flx(rebind[DTypePointer[DType.int32]](v4.data), len(v4)), 
-    #     3, 0, 0, 0, 1, 0, 0, 0, 204, 216, 0, 0, 3, 0, 0, 0, 12, 46, 1
-    # )
-    # let v8 = vec[DType.int64](1, 55555555500, 3)
-    # assert_result(
-    #     flx(rebind[DTypePointer[DType.int64]](v8.data), len(v8)), 
-    #     3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 172, 128, 94, 239, 12, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 24, 47, 1
-    # )
-    # let vb = vec[DType.bool](True, False, True)
-    # assert_result(flx(rebind[DTypePointer[DType.bool]](vb.data), len(vb)), 3, 1, 0, 1, 3, 144, 1)
+    # assert_result(flx_null(), 0, 0, 1)
+    # assert_result(flx(25), 25, 4, 1)
+    # assert_result(flx(-25), 231, 4, 1)
+    # assert_result(flx(230), 230, 0, 5, 2)
+    # assert_result(flx(-230), 26, 255, 5, 2)
+    # assert_result(flx[DType.uint8](230), 230, 8, 1)
+    # assert_result(flx[DType.uint16](230), 230, 0, 9, 2)
+    # assert_result(flx[DType.uint32](230), 230, 0, 0, 0, 10, 4)
+    # assert_result(flx[DType.uint64](230), 230, 0, 0, 0, 0, 0, 0, 0, 11, 8)
+    # assert_result(flx[DType.bool](True), 1, 104, 1)
+    # assert_result(flx[DType.bool](False), 0, 104, 1)
+    # assert_result(flx[DType.float16](4.5), 128, 68, 13, 2)
+    # assert_result(flx[DType.float32](4.5), 0, 0, 144, 64, 14, 4)
+    # assert_result(flx[DType.float32](0.1), 205, 204, 204, 61, 14, 4)
+    # assert_result(flx("Maxim"), 5, 77, 97, 120, 105, 109, 0, 6, 20, 1)
+    # assert_result(flx("hello 😱"), 10, 104, 101, 108, 108, 111, 32, 240, 159, 152, 177, 0, 11, 20, 1)
+    # assert_result(flx("hello 🔥"), 10, 104, 101, 108, 108, 111, 32, 240, 159, 148, 165, 0, 11, 20, 1)
+    var v1 = vec[DType.int8](1, 2, 3)
+    assert_result(flx(DTypePointer[DType.int8](v1.data.value), len(v1)), 3, 1, 2, 3, 3, 44, 1)
+    _= v1 # needed hack becasue of ASAP descruction policy, will be removed with proper LifeTime feature 
+    v1 = vec[DType.int8](-1, 2, 3)
+    assert_result(flx(DTypePointer[DType.int8](v1.data.value), len(v1)), 3, 255, 2, 3, 3, 44, 1)
+    _= v1 # needed hack becasue of ASAP descruction policy, will be removed with proper LifeTime feature 
+    let v2 = vec[DType.int16](1, 555, 3)
+    assert_result(flx(DTypePointer[DType.int16](v2.data.value), len(v2)), 3, 0, 1, 0, 43, 2, 3, 0, 6, 45, 1)
+    _= v2 # needed hack becasue of ASAP descruction policy, will be removed with proper LifeTime feature 
+    let v4 = vec[DType.int32](1, 55500, 3)
+    assert_result(
+        flx(DTypePointer[DType.int32](v4.data.value), len(v4)), 
+        3, 0, 0, 0, 1, 0, 0, 0, 204, 216, 0, 0, 3, 0, 0, 0, 12, 46, 1
+    )
+    _= v4 # needed hack becasue of ASAP descruction policy, will be removed with proper LifeTime feature 
+    let v8 = vec[DType.int64](1, 55555555500, 3)
+    assert_result(
+        flx(DTypePointer[DType.int64](v8.data.value), len(v8)), 
+        3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 172, 128, 94, 239, 12, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 24, 47, 1
+    )
+    _= v8 # needed hack becasue of ASAP descruction policy, will be removed with proper LifeTime feature 
+    let vb = vec[DType.bool](True, False, True)
+    assert_result(flx(DTypePointer[DType.bool](vb.data.value), len(vb)), 3, 1, 0, 1, 3, 144, 1)
+    _= vb # needed hack becasue of ASAP descruction policy, will be removed with proper LifeTime feature 
 
 fn test_vec_construction():
     try:
