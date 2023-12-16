@@ -1,5 +1,5 @@
 from .data_types import StackValue, ValueBitWidth, padding_size, ValueType
-from .cache import _CacheKeys_Vector, Key, _CacheStringOrKey
+from .cache import _CacheKeysVector, Key, _CacheStringOrKey
 from memory import memcpy, memset_zero
 from memory.unsafe import bitcast
 from math import max
@@ -44,7 +44,7 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
     var _finished: Bool
     var _string_cache: _CacheStringOrKey
     var _key_cache: _CacheStringOrKey
-    var _keys_vec_cache: _CacheKeys_Vector
+    var _keys_vec_cache: _CacheKeysVector
 
     fn __init__(inout self, size: UInt64 = 1 << 11):
         self._size = size
@@ -56,7 +56,7 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
         self._finished = False
         self._string_cache = _CacheStringOrKey()
         self._key_cache = _CacheStringOrKey()
-        self._keys_vec_cache = _CacheKeys_Vector()
+        self._keys_vec_cache = _CacheKeysVector()
 
     fn __moveinit__(inout self, owned other: Self):
         self._size = other._size^

@@ -16,7 +16,7 @@ struct Key(CollectionElement):
 alias Keys = DynamicVector[Key]
 alias Values = DynamicVector[StackValue]
 
-struct _CacheKeys_Vector(Movable, Copyable):
+struct _CacheKeysVector(Movable, Copyable):
     var keys: Keys
     var values: Values
     var key_map: DTypePointer[DType.uint32]
@@ -211,7 +211,8 @@ struct _CacheStringOrKey(Movable, Copyable):
     fn __copyinit__(inout self, other: Self):
         self.count = other.count
         self.capacity = other.capacity
-        # TODO: copies elelemnts one by one because there is a bug in __copyinit__ of DynamicVector
+        # TODO: copies elements one by one because otherwise it throws a core dump
+        # self.ocs = other.ocs
         self.ocs = DynamicVector[(Int, Int)](self.capacity)
         for i in range(self.capacity):
             self.ocs[i] = other.ocs[i]        
