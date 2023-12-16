@@ -1,5 +1,5 @@
 from .data_types import StackValue, ValueBitWidth, padding_size, ValueType
-from .cache import Cache, Key
+from .cache import _CacheKeys_Vector, Key, _CacheStringOrKey
 from memory import memcpy, memset_zero
 from memory.unsafe import bitcast
 from math import max
@@ -42,9 +42,9 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
     var _size: UInt64
     var _offset: UInt64
     var _finished: Bool
-    var _string_cache: Cache
-    var _key_cache: Cache
-    var _keys_vec_cache: Cache
+    var _string_cache: _CacheStringOrKey
+    var _key_cache: _CacheStringOrKey
+    var _keys_vec_cache: _CacheKeys_Vector
 
     fn __init__(inout self, size: UInt64 = 1 << 11):
         self._size = size
@@ -54,9 +54,9 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
         self._bytes = DTypePointer[DType.uint8].alloc(size.to_int())
         self._offset = 0
         self._finished = False
-        self._string_cache = Cache()
-        self._key_cache = Cache()
-        self._keys_vec_cache = Cache()
+        self._string_cache = _CacheStringOrKey()
+        self._key_cache = _CacheStringOrKey()
+        self._keys_vec_cache = _CacheKeys_Vector()
 
     fn __moveinit__(inout self, owned other: Self):
         self._size = other._size^
@@ -97,30 +97,54 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
         self._stack.push_back(StackValue.of(value))
 
     fn add(inout self, value: String):
+        self._add_string[as_key=False](value)
+
+    fn key(inout self, value: String):
+        self._add_string[as_key=True](value)
+
+    fn _add_string[as_key: Bool](inout self, value: String):
         let byte_length = len(value)
         let bit_width = ValueBitWidth.of(byte_length)
         let bytes = value._as_ptr().bitcast[DType.uint8]()
+
         @parameter
-        if dedup_string:
-            let cached = self._string_cache.get(Key(bytes, byte_length), StackValue.Null)
-            if cached != StackValue.Null:
-                self._stack.push_back(cached)
+        if dedup_string and not as_key:
+            let cached_offset = self._string_cache.get((bytes, byte_length), self._bytes)
+            if cached_offset != -1:
+                self._stack.push_back(StackValue(bitcast[DType.uint8, 8](Int64(cached_offset)), bit_width, ValueType.String))
                 return
-        let byte_width = self._align(bit_width)
-        self._write(byte_length, byte_width)
+
+        @parameter
+        if dedup_key and as_key:
+            let cached_offset = self._key_cache.get((bytes, byte_length), self._bytes)
+            if cached_offset != -1:
+                self._stack.push_back(StackValue(bitcast[DType.uint8, 8](Int64(cached_offset)), bit_width, ValueType.Key))
+                return
+            
+        @parameter
+        if not as_key:
+            let byte_width = self._align(bit_width)
+            self._write(byte_length, byte_width)
+
         let offset = self._offset
         let new_offest = self._new_offset(byte_length)
         memcpy(self._bytes.offset(self._offset.to_int()), bytes, byte_length)
         self._offset = new_offest
         self._write(0)
-        let stack_value = StackValue(bitcast[DType.uint8, 8](offset), bit_width, ValueType.String)
-        self._stack.push_back(stack_value)
+
         @parameter
-        if dedup_string:
-            let c_bytes = DTypePointer[DType.uint8].alloc(byte_length)
-            memcpy(c_bytes, bytes, byte_length)
-            let key = Key(c_bytes, byte_length)
-            self._string_cache.put(key, stack_value)
+        if dedup_string and not as_key:
+            self._string_cache.put((offset.to_int(), byte_length), self._bytes)
+        @parameter
+        if dedup_key and as_key:
+            self._key_cache.put((offset.to_int(), byte_length), self._bytes)
+
+        @parameter
+        if as_key:
+            self._stack.push_back(StackValue(bitcast[DType.uint8, 8](offset), bit_width, ValueType.Key))
+        else:
+            self._stack.push_back(StackValue(bitcast[DType.uint8, 8](offset), bit_width, ValueType.String))
+        value._strref_keepalive()
     
     fn blob(inout self, value: DTypePointer[DType.uint8], length: Int):
         let bit_width = ValueBitWidth.of(length)
@@ -172,30 +196,6 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
     fn start_map(inout self):
         self._stack_positions.push_back(len(self._stack))
         self._stack_is_vector.push_back(False)
-
-    fn key(inout self, s: String):
-        let byte_length = len(s)
-        let bit_width = ValueBitWidth.of(byte_length)
-        let bytes = s._as_ptr().bitcast[DType.uint8]()
-        @parameter
-        if dedup_key:
-            let cached = self._key_cache.get(Key(bytes, byte_length), StackValue.Null)
-            if cached != StackValue.Null:
-                self._stack.push_back(cached)
-                return
-        let offset = self._offset
-        let new_offest = self._new_offset(byte_length)
-        memcpy(self._bytes.offset(self._offset.to_int()), bytes, byte_length)
-        self._offset = new_offest
-        self._write(0)
-        let stack_value = StackValue(bitcast[DType.uint8, 8](offset), bit_width, ValueType.Key)
-        self._stack.push_back(stack_value)
-        @parameter
-        if dedup_key:
-            let c_bytes = DTypePointer[DType.uint8].alloc(byte_length)
-            memcpy(c_bytes, bytes, byte_length)
-            self._key_cache.put(Key(c_bytes, byte_length), stack_value)
-        s._strref_keepalive()
 
     fn end(inout self) raises:
         let position = self._stack_positions.pop_back()
