@@ -16,7 +16,7 @@ struct Key(CollectionElement):
 alias Keys = DynamicVector[Key]
 alias Values = DynamicVector[StackValue]
 
-struct _CacheKeysVector(Movable, Copyable):
+struct _CacheStackValue(Movable, Copyable):
     var keys: Keys
     var values: Values
     var key_map: DTypePointer[DType.uint32]

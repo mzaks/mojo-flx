@@ -173,6 +173,23 @@ fn test_map_construction():
     except:
         print("unexpected error")
 
+fn test_add_referenced() raises:
+    var flx = FlxBuffer()
+    flx.start_vector()
+    flx.start_vector()
+    flx.add(1)
+    flx.add(2)
+    flx.add(3)
+    flx.end("v1")
+    flx.add_referenced("v1")
+    flx.add_referenced("v1")
+    flx.add_referenced("v1")
+    flx.end()
+    assert_result(
+        flx^.finish(),
+        3, 1, 2, 3, 4, 4, 5, 6, 7, 44, 44, 44, 44, 8, 40, 1,
+    )
+
 fn test_map_builder():
     try:
         assert_result(
@@ -384,5 +401,6 @@ fn main() raises:
     test_blob()
     test_dedup_string()
     test_dedup_key()
+    test_add_referenced()
 
     print("All Done!!!")

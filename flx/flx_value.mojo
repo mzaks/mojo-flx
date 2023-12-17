@@ -1,7 +1,7 @@
 from .data_types import ValueType, is_be
 from math.bit import bswap
 
-struct FlxValue:
+struct FlxValue(Sized):
     var _bytes: DTypePointer[DType.uint8]
     var _byte_width: UInt8
     var _parent_byte_width: UInt8
@@ -246,7 +246,7 @@ struct FlxValue:
         raise "Unexpected type id: " + String(self._type.value)
 
 
-struct FlxVecValue:
+struct FlxVecValue(Sized):
     var _bytes: DTypePointer[DType.uint8]
     var _byte_width: UInt8
     var _type: ValueType
@@ -290,7 +290,7 @@ struct FlxVecValue:
             )
         raise "Is not an expected vector type. Type id: " + String(self._type.value)
 
-struct FlxMapValue:
+struct FlxMapValue(Sized):
     var _bytes: DTypePointer[DType.uint8]
     var _byte_width: UInt8
     var _length: Int

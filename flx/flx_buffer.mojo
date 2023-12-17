@@ -1,5 +1,5 @@
 from .data_types import StackValue, ValueBitWidth, padding_size, ValueType
-from .cache import _CacheKeysVector, Key, _CacheStringOrKey
+from .cache import _CacheStackValue, Key, _CacheStringOrKey
 from memory import memcpy, memset_zero
 from memory.unsafe import bitcast
 from math import max
@@ -44,7 +44,8 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
     var _finished: Bool
     var _string_cache: _CacheStringOrKey
     var _key_cache: _CacheStringOrKey
-    var _keys_vec_cache: _CacheKeysVector
+    var _keys_vec_cache: _CacheStackValue
+    var _reference_cache: _CacheStackValue
 
     fn __init__(inout self, size: UInt64 = 1 << 11):
         self._size = size
@@ -56,7 +57,8 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
         self._finished = False
         self._string_cache = _CacheStringOrKey()
         self._key_cache = _CacheStringOrKey()
-        self._keys_vec_cache = _CacheKeysVector()
+        self._keys_vec_cache = _CacheStackValue()
+        self._reference_cache = _CacheStackValue()
 
     fn __moveinit__(inout self, owned other: Self):
         self._size = other._size^
@@ -69,6 +71,7 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
         self._string_cache = other._string_cache^
         self._key_cache = other._key_cache^
         self._keys_vec_cache = other._keys_vec_cache^
+        self._reference_cache = other._reference_cache^
 
     fn __copyinit__(inout self, other: Self):
         self._size = other._size
@@ -82,6 +85,7 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
         self._string_cache = other._string_cache
         self._key_cache = other._key_cache
         self._keys_vec_cache = other._keys_vec_cache
+        self._reference_cache = other._reference_cache
     
     fn __del__(owned self):
         if not self._finished:
@@ -188,7 +192,15 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
                 self.end()
             except:
                 pass
-    
+
+    fn add_referenced(inout self, reference_key: String) raises:
+        let key = Key(reference_key._as_ptr().bitcast[DType.uint8](), len(reference_key))
+        let stack_value = self._reference_cache.get(key, StackValue.Null)
+        key.pointer.free()
+        if stack_value.type == ValueType.Null:
+            raise "No value for reference key " + reference_key
+        self._stack.push_back(stack_value)
+
     fn start_vector(inout self):
         self._stack_positions.push_back(len(self._stack))
         self._stack_is_vector.push_back(True)
@@ -197,13 +209,16 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
         self._stack_positions.push_back(len(self._stack))
         self._stack_is_vector.push_back(False)
 
-    fn end(inout self) raises:
+    fn end(inout self, reference_key: String = "") raises:
         let position = self._stack_positions.pop_back()
         let is_vector = self._stack_is_vector.pop_back()
         if is_vector:
             self._end_vector(position)
         else:
             self._sort_keys_and_end_map(position)
+        if len(reference_key) > 0:
+            let key = Key(reference_key._as_ptr().bitcast[DType.uint8](), len(reference_key))
+            self._reference_cache.put(key, self._stack[len(self._stack) - 1])
     
     fn finish(owned self) raises -> (DTypePointer[DType.uint8], Int):
         return self._finish()
