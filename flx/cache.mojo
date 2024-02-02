@@ -32,10 +32,10 @@ struct _CacheStackValue(Movable, Copyable):
         memset_zero(self.key_map, self.capacity)
     
     fn __moveinit__(inout self, owned other: Self):
-        self.count = other.count^
-        self.capacity = other.capacity^
+        self.count = other.count
+        self.capacity = other.capacity
         self.values = other.values^
-        self.key_map = other.key_map^
+        self.key_map = other.key_map
         self.keys = other.keys^
 
     fn __copyinit__(inout self, other: Self):
@@ -203,10 +203,10 @@ struct _CacheStringOrKey(Movable, Copyable):
         memset_zero(self.key_map, self.capacity)
 
     fn __moveinit__(inout self, owned other: Self):
-        self.count = other.count^
-        self.capacity = other.capacity^
+        self.count = other.count
+        self.capacity = other.capacity
         self.ocs = other.ocs^
-        self.key_map = other.key_map^
+        self.key_map = other.key_map
 
     fn __copyinit__(inout self, other: Self):
         self.count = other.count

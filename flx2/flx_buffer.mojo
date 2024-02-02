@@ -61,13 +61,13 @@ struct FlxBuffer[dedup_string: Bool = True, dedup_key: Bool = True, dedup_keys_v
         self._reference_cache = _CacheStackValue()
 
     fn __moveinit__(inout self, owned other: Self):
-        self._size = other._size^
+        self._size = other._size
         self._stack = other._stack^
         self._stack_positions = other._stack_positions^
         self._stack_is_vector = other._stack_is_vector^
-        self._bytes = other._bytes^
-        self._offset = other._offset^
-        self._finished = other._finished^
+        self._bytes = other._bytes
+        self._offset = other._offset
+        self._finished = other._finished
         self._string_cache = other._string_cache^
         self._key_cache = other._key_cache^
         self._keys_vec_cache = other._keys_vec_cache^
