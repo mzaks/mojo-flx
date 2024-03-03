@@ -26,7 +26,7 @@ fn assert_result(r: Tuple[DTypePointer[DType.uint8], Int], *bytes: UInt8):
             return
 
 fn vec[D: DType](*values: SIMD[D, 1]) -> DynamicVector[SIMD[D, 1]]:
-    var result = DynamicVector[SIMD[D, 1]](len(values))
+    var result = DynamicVector[SIMD[D, 1]](capacity=len(values))
     for i in range(len(values)):
         result.push_back(values[i])
     return result

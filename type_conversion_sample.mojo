@@ -20,7 +20,7 @@ fn convert_dynamic_vector() raises:
     let size = blob.get[1, Int]() / 4
     let bytes = blob.get[0, DTypePointer[DType.uint8]]()
     let bytes32 = bytes.bitcast[DType.int32]()
-    var v1 = DynamicVector[Int32](size.to_int())
+    var v1 = DynamicVector[Int32](capacity=size.to_int())
     for i in range(size.to_int()):
         v1.push_back(bytes32.offset(i).load())
 

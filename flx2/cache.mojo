@@ -27,8 +27,8 @@ struct _CacheStackValue(Movable, Copyable):
     fn __init__(inout self):
         self.count = 0
         self.capacity = 16
-        self.keys = Keys(self.capacity)
-        self.values = Values(self.capacity)
+        self.keys = Keys(capacity=self.capacity)
+        self.values = Values(capacity=self.capacity)
         self.key_map = DTypePointer[DType.uint32].alloc(self.capacity)
         memset_zero(self.key_map, self.capacity)
     
@@ -48,8 +48,8 @@ struct _CacheStackValue(Movable, Copyable):
         memcpy(self.key_map, other.key_map, self.capacity)
         # self.keys = other.keys
         # self.values = other.values
-        self.keys = Keys(keys_count)
-        self.values = Values(keys_count)
+        self.keys = Keys(capacity=keys_count)
+        self.values = Values(capacity=keys_count)
         for i in range(keys_count):
             let key = other.keys[i]
             let p = key.pointer
@@ -199,7 +199,7 @@ struct _CacheStringOrKey[is_string: Bool = True](Movable, Copyable):
     fn __init__(inout self):
         self.count = 0
         self.capacity = 16
-        self.ocs = DynamicVector[(Int, Int)](self.capacity)
+        self.ocs = DynamicVector[(Int, Int)](capacity=self.capacity)
         self.key_map = DTypePointer[DType.uint32].alloc(self.capacity)
         memset_zero(self.key_map, self.capacity)
 
@@ -214,7 +214,7 @@ struct _CacheStringOrKey[is_string: Bool = True](Movable, Copyable):
         self.capacity = other.capacity
         # TODO: copies elements one by one because otherwise it throws a core dump
         # self.ocs = other.ocs
-        self.ocs = DynamicVector[(Int, Int)](self.capacity)
+        self.ocs = DynamicVector[(Int, Int)](capacity=self.capacity)
         for i in range(self.capacity):
             self.ocs[i] = other.ocs[i]        
         self.key_map = DTypePointer[DType.uint32].alloc(self.capacity)

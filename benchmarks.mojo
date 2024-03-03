@@ -43,7 +43,7 @@ fn construct_and_read_vec[count: Int, DW: DType, DR: DType = DW]() raises:
 
 fn construct_and_read_table[columns: Int, rows: Int, DW: DType, DR: DType = DW]() raises:
     let counts = columns * rows
-    var nums = DynamicVector[SIMD[DW, 1]](counts)
+    var nums = DynamicVector[SIMD[DW, 1]](capacity=counts)
     for _ in range(counts):
         @parameter
         if DW == DType.uint8 or DW == DType.uint16 or DW == DType.uint32 or DW == DType.uint64:
