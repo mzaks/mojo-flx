@@ -348,16 +348,21 @@ fn jump_to_indirect(bytes: DTypePointer[DType.uint8], byte_width: UInt8) -> DTyp
 
 @always_inline
 fn read_size(bytes: DTypePointer[DType.uint8]) -> Tuple[Int, Int]:
-    let val = bytes.load()
-    let byte_width = (val & 3).to_int() + 1
-    if byte_width > 2:
-        if byte_width == 4:
-            return (bytes.bitcast[DType.uint32]().load() >> 2).to_int(), byte_width
-        return (bytes.bitcast[DType.uint64]().load() >> 2).to_int(), byte_width
-    else:
-        if byte_width == 2:
-            return (bytes.bitcast[DType.uint16]().load() >> 2).to_int(), byte_width
-        return (val >> 2).to_int(), byte_width
+    var val = bytes.bitcast[DType.uint64]().load()
+    var byte_width = (val & 3).to_int() + 1
+    var mask = (1 << (byte_width << 3)) - 1
+    return ((val & mask) >> 2).to_int(), byte_width
+    # Below is a safer version, do not delete yet:
+    # let val = bytes.load()
+    # let byte_width = (val & 3).to_int() + 1
+    # if byte_width > 2:
+    #     if byte_width == 4:
+    #         return (bytes.bitcast[DType.uint32]().load() >> 2).to_int(), byte_width
+    #     return (bytes.bitcast[DType.uint64]().load() >> 2).to_int(), byte_width
+    # else:
+    #     if byte_width == 2:
+    #         return (bytes.bitcast[DType.uint16]().load() >> 2).to_int(), byte_width
+    #     return (val >> 2).to_int(), byte_width
 
 @always_inline
 fn read_uint(bytes: DTypePointer[DType.uint8], byte_width: UInt8) -> Int:
