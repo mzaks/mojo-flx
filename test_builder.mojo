@@ -6,12 +6,12 @@ from memory.unsafe import bitcast
 from testing import assert_equal
 
 fn print_result(r: Tuple[DTypePointer[DType.uint8], Int]):
-    let bytes = r.get[0, DTypePointer[DType.uint8]]()
-    let length = r.get[1, Int]()
-    print_no_newline("(", length, ")", "[")
+    var bytes = r.get[0, DTypePointer[DType.uint8]]()
+    var length = r.get[1, Int]()
+    print("(" +  str(length) +  ")[", end="")
     for i in range(length):
-        print_no_newline(String(bytes.load(i)) + ", ")
-    print("]")
+        var end = ", " if i < length - 1 else "]\n"
+        print(String(bytes.load(i)), end=end)
 
 
 fn assert_result(r: Tuple[DTypePointer[DType.uint8], Int], *bytes: UInt8):
@@ -19,17 +19,17 @@ fn assert_result(r: Tuple[DTypePointer[DType.uint8], Int], *bytes: UInt8):
         print("Error, result contains", r.get[1, Int](), "bytes and you provided", len(bytes))
         print_result(r)
         return 
-    let p = r.get[0, DTypePointer[DType.uint8]]()
+    var p = r.get[0, DTypePointer[DType.uint8]]()
     for i in range(len(bytes)):
         if p.load(i) != bytes[i]:
             print("Error at index", i, "byte",  p.load(i), "!=", bytes[i])
             print_result(r)
             return
 
-fn vec[D: DType](*values: SIMD[D, 1]) -> DynamicVector[SIMD[D, 1]]:
-    var result = DynamicVector[SIMD[D, 1]](capacity=len(values))
+fn vec[D: DType](*values: SIMD[D, 1]) -> List[SIMD[D, 1]]:
+    var result = List[SIMD[D, 1]](capacity=len(values))
     for i in range(len(values)):
-        result.push_back(values[i])
+        result.append(values[i])
     return result
 
 fn test_single_value_contructor():
@@ -56,22 +56,22 @@ fn test_single_value_contructor():
     v1 = vec[DType.int8](-1, 2, 3)
     assert_result(flx(DTypePointer[DType.int8](v1.data.value), len(v1)), 3, 255, 2, 3, 3, 44, 1)
     _= v1 # needed hack becasue of ASAP descruction policy, will be removed with proper LifeTime feature 
-    let v2 = vec[DType.int16](1, 555, 3)
+    var v2 = vec[DType.int16](1, 555, 3)
     assert_result(flx(DTypePointer[DType.int16](v2.data.value), len(v2)), 3, 0, 1, 0, 43, 2, 3, 0, 6, 45, 1)
     _= v2 # needed hack becasue of ASAP descruction policy, will be removed with proper LifeTime feature 
-    let v4 = vec[DType.int32](1, 55500, 3)
+    var v4 = vec[DType.int32](1, 55500, 3)
     assert_result(
         flx(DTypePointer[DType.int32](v4.data.value), len(v4)), 
         3, 0, 0, 0, 1, 0, 0, 0, 204, 216, 0, 0, 3, 0, 0, 0, 12, 46, 1
     )
     _= v4 # needed hack becasue of ASAP descruction policy, will be removed with proper LifeTime feature 
-    let v8 = vec[DType.int64](1, 55555555500, 3)
+    var v8 = vec[DType.int64](1, 55555555500, 3)
     assert_result(
         flx(DTypePointer[DType.int64](v8.data.value), len(v8)), 
         3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 172, 128, 94, 239, 12, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 24, 47, 1
     )
     _= v8 # needed hack becasue of ASAP descruction policy, will be removed with proper LifeTime feature 
-    let vb = vec[DType.bool](True, False, True)
+    var vb = vec[DType.bool](True, False, True)
     assert_result(flx(DTypePointer[DType.bool](vb.data.value), len(vb)), 3, 1, 0, 1, 3, 144, 1)
     _= vb # needed hack becasue of ASAP descruction policy, will be removed with proper LifeTime feature 
 
@@ -269,13 +269,13 @@ fn test_vec_builder():
         print("unexpected error", e)
 
 fn test_blob() raises:
-    let data = DTypePointer[DType.uint8].alloc(1001)
+    var data = DTypePointer[DType.uint8].alloc(1001)
     for i in range(1001):
         data[i] = 5
     
-    let r = flx_blob(data, 1001)
-    let b = r.get[0, DTypePointer[DType.uint8]]()
-    let l = r.get[1, Int]()
+    var r = flx_blob(data, 1001)
+    var b = r.get[0, DTypePointer[DType.uint8]]()
+    var l = r.get[1, Int]()
     _ = assert_equal(l, 1008)
     _ = assert_equal(b.load(0), 233)
     _ = assert_equal(b.load(1), 3)

@@ -3,26 +3,26 @@ from testing import assert_equal, assert_almost_equal
 from test_builder2 import print_result
 
 fn test_string() raises:
-    let r = flx("Hello world")
-    let value = FlxValue(r)
+    var r = flx("Hello world")
+    var value = FlxValue(r)
     _ = assert_equal("Hello world", value.string())
 
 fn test_blob() raises:
-    let data = DTypePointer[DType.uint8].alloc(1001)
+    var data = DTypePointer[DType.uint8].alloc(1001)
     for i in range(1001):
         data[i] = 5
     
-    let r = flx_blob(data, 1001)
+    var r = flx_blob(data, 1001)
 
-    let b = r.get[0, DTypePointer[DType.uint8]]()
-    let l = r.get[1, Int]()
+    var b = r.get[0, DTypePointer[DType.uint8]]()
+    var l = r.get[1, Int]()
     assert_equal(l, 1008)
     assert_equal(b.load(0), 165)
     assert_equal(b.load(1), 15)
     
     
-    let value = FlxValue(b, l)
-    let blob = value.blob()
+    var value = FlxValue(b, l)
+    var blob = value.blob()
     _ = assert_equal(blob.get[1, Int](), 1001)
     for i in range(1001):
         _ = assert_equal(blob.get[0, DTypePointer[DType.uint8]]().load(i), 5)
@@ -62,7 +62,7 @@ fn test_float() raises:
     _ = assert_almost_equal(value.float(), 123.4375) # Rounding error becuase of 16 bit precision
 
 fn test_vec() raises:
-    let r1 = FlxVec().add(1).add(2).add(3).finish()
+    var r1 = FlxVec().add(1).add(2).add(3).finish()
     var value = FlxValue(r1)
     _ = assert_equal(value[0].get[DType.int8](), 1)
     _ = assert_equal(value[0].int(), 1)
@@ -71,19 +71,19 @@ fn test_vec() raises:
     _ = assert_equal(value[2].get[DType.int8](), 3)
     _ = assert_equal(value[2].int(), 3)
 
-    let r2 = FlxVec().add("a").vec().add("b").add("c").finish()
+    var r2 = FlxVec().add("a").vec().add("b").add("c").finish()
     value = FlxValue(r2)
     _ = assert_equal(value[0].string(), "a")
     _ = assert_equal(value[1][0].string(), "b")
     _ = assert_equal(value[1][1].string(), "c")
 
-    let r3 = FlxVec().add[DType.float16](1.1).add[DType.float32](1.1).add[DType.float64](1.1).finish()
+    var r3 = FlxVec().add[DType.float16](1.1).add[DType.float32](1.1).add[DType.float64](1.1).finish()
     value = FlxValue(r3)
     _ = assert_equal(value[0].get[DType.float64](), Float16(1.1))
     _ = assert_equal(value[1].get[DType.float64](), Float32(1.1))
     _ = assert_equal(value[2].get[DType.float64](), 1.1)
 
-    let r4 = FlxVec().add[DType.int8](-13).add[DType.int16](-13).add[DType.int32](-13).add[DType.int64](-13).finish()
+    var r4 = FlxVec().add[DType.int8](-13).add[DType.int16](-13).add[DType.int32](-13).add[DType.int64](-13).finish()
     value = FlxValue(r4.get[0, DTypePointer[DType.uint8]](), r4.get[1, Int]())
     _ = assert_equal(value[0].get[DType.int64](), -13)
     _ = assert_equal(value[0].int(), -13)
@@ -97,13 +97,13 @@ fn test_vec() raises:
     var vec = FlxVec()
     for i in range(256):
         vec = vec^.add[DType.bool](i & 1 == 1)
-    let r5 = vec^.finish()
+    var r5 = vec^.finish()
     value = FlxValue(r5.get[0, DTypePointer[DType.uint8]](), r5.get[1, Int]())
     _ = assert_equal(256, value.__len__())
     for i in range(256):
         _ = assert_equal(i & 1 == 1, value[i].bool())
 
-    let r6 = FlxVec().add[DType.int32](1234).add("maxim").add[DType.float16](1.5).add[DType.bool](True).finish()
+    var r6 = FlxVec().add[DType.int32](1234).add("maxim").add[DType.float16](1.5).add[DType.bool](True).finish()
     value = FlxValue(r6.get[0, DTypePointer[DType.uint8]](), r6.get[1, Int]())
     _ = assert_equal(value[0].int(), 1234)
     _ = assert_equal(value[1].string(), "maxim")
@@ -212,7 +212,7 @@ fn test_indirect() raises:
     _ = assert_equal(value["c"].int(), 3)
 
 fn test_referenced() raises:
-    let r1 = FlxVec()
+    var r1 = FlxVec()
         .map()
             .vec("vector")
                 .add("Hello")
@@ -230,7 +230,7 @@ fn test_referenced() raises:
         .add_referenced("v2")
         .add_referenced("p1")
         .finish()
-    let value = FlxValue(r1)
+    var value = FlxValue(r1)
     assert_equal(len(value), 4)
     assert_equal(len(value[0]), 1)
     assert_equal(len(value[0]["vector"]), 2)
@@ -262,7 +262,7 @@ fn test_referenced() raises:
     assert_equal(value[3]["city"].string(), "Berlin")
     assert_equal(value[3]["text"][0].string(), "Hello")
     assert_equal(value[3]["text"][1].string(), "World")
-    let json = value.json()
+    var json = value.json()
     assert_equal(
         json,
         '[{"vector":["Hello","World"]},[{"city":"Berlin","name":"Maxim","text":["Hello","World"]},{"city":"Berlin","name":"Maxim","text":["Hello","World"]}],[{"city":"Berlin","name":"Maxim","text":["Hello","World"]},{"city":"Berlin","name":"Maxim","text":["Hello","World"]}],{"city":"Berlin","name":"Maxim","text":["Hello","World"]}]'
