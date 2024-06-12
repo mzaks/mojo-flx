@@ -21,21 +21,21 @@ Examples:
 ```
 from flx import flx, flx_blob, flx_null
 
-let b0 = flx_null()
-let b1 = flx(25)
-let b2 = flx("hello world")
-let b3 = flx[DType.bool](True)
-let b4 = flx[DType.float32](43.1)
+var b0 = flx_null()
+var b1 = flx(25)
+var b2 = flx("hello world")
+var b3 = flx[DType.bool](True)
+var b4 = flx[DType.float32](43.1)
 
 var blob = DynamicVector[UInt8](100)
 for i in range(100):
     blob.push_back(5)
-let b5 = flx_blob(blob.data, len(blob))
+var b5 = flx_blob(blob.data, len(blob))
 
 var v = DynamicVector[UInt16](1000)
 for i in range(1000):
     v.push_back(i) 
-let b6 = flx(DTypePointer[DType.uint16](v.data), len(v))
+var b6 = flx(DTypePointer[DType.uint16](v.data), len(v))
 ```
 
 ### Construct Vectors and Maps
@@ -47,7 +47,7 @@ Below you can find an example, where we produce a column based dataframe with na
 from flx import FlxMap
 
 try:
-    let df_cb = FlxMap()
+    var df_cb = FlxMap()
                 .vec("name")
                     .add("Maxim")
                     .add("Leo")
@@ -73,7 +73,7 @@ We can construct the same dataframe but row based as a vector of maps:
 from flx import FlxVec
 
 try:
-    let df_rb = FlxVec()
+    var df_rb = FlxVec()
                 .map()
                     .add("name", "Maxim")
                     .add("age", 42)
@@ -116,14 +116,14 @@ Users can materialise the value with one of the following methods:
 
 Bellow you can find an example of how to read values from column based dataframe descirbed above:
 ```
-let value = FlxValue(df_cb)
+var value = FlxValue(df_cb)
 print(value["name"][0].string())                # Maxim
 print(value["age"][0].string())                 # 42
 print(value["friendly"][0].get[DType.bool]())   # False
 ```
 And here is a snippet for reading a row based dataframe:
 ```
-let value = FlxValue(df_rb)
+var value = FlxValue(df_rb)
 print(value[0]["name"].string())                # Maxim
 print(value[0]["age"].string())                 # 42
 print(value[0]["friendly"].get[DType.bool]())   # False
@@ -181,7 +181,7 @@ Before we proceed to vectors, I wanted to mention that there is another way how 
     try:
         var flxb = flx_buffer.FlxBuffer()
         flxb.key("Hello 🔥")
-        let result = flxb^.finish()
+        var result = flxb^.finish()
     except e:
         print(e)
 ```
