@@ -1,5 +1,4 @@
-from math.limit import max_finite, min_finite
-from math.bit import bswap, bit_length
+from bit import byte_swap, bit_width
 from memory.unsafe import bitcast
 from sys.info import is_big_endian
 
@@ -13,15 +12,15 @@ struct ValueBitWidth:
     alias width32 = ValueBitWidth(2)
     alias width64 = ValueBitWidth(3)
 
-    alias min8 = min_finite[DType.int8]().to_int()
-    alias max8 = max_finite[DType.int8]().to_int()
-    alias umax8 = max_finite[DType.uint8]().cast[DType.uint64]()
-    alias min16 = min_finite[DType.int16]().to_int()
-    alias max16 = max_finite[DType.int16]().to_int()
-    alias umax16 = max_finite[DType.uint16]().cast[DType.uint64]()
-    alias min32 = min_finite[DType.int32]().to_int()
-    alias max32 = max_finite[DType.int32]().to_int()
-    alias umax32 = max_finite[DType.uint32]().cast[DType.uint64]()
+    alias min8 = int(Int8.MIN_FINITE)
+    alias max8 = int(Int8.MAX_FINITE)
+    alias umax8 = UInt8.MAX_FINITE.cast[DType.uint64]()
+    alias min16 = int(Int16.MIN_FINITE)
+    alias max16 = int(Int16.MAX_FINITE)
+    alias umax16 = UInt16.MAX_FINITE.cast[DType.uint64]()
+    alias min32 = int(Int32.MIN_FINITE)
+    alias max32 = int(Int32.MAX_FINITE)
+    alias umax32 = UInt32.MAX_FINITE.cast[DType.uint64]()
 
     var value: UInt8
 
@@ -53,12 +52,12 @@ struct ValueBitWidth:
     @always_inline
     @staticmethod
     fn of(n: Int) -> ValueBitWidth:
-        return ValueBitWidth((bit_length(Int64(n)) >> 3).to_int())
+        return ValueBitWidth(int(bit_width(Int64(n)) >> 3))
     
     @always_inline
     @staticmethod
     fn of(n: UInt64) -> ValueBitWidth:
-        return ValueBitWidth((bit_length(n) >> 3).to_int())
+        return ValueBitWidth(int(bit_width(n) >> 3))
 
 @always_inline
 fn padding_size(buffer_size: UInt64, scalar_size: UInt64) -> UInt64:
@@ -170,7 +169,7 @@ struct ValueType:
             return self - ValueType.Int + ValueType.VectorInt3
         if length == 4:
             return self - ValueType.Int + ValueType.VectorInt4
-        raise "Unexpected length " + String(length)
+        raise "Unexpected length " + str(length)
 
     @always_inline
     fn typed_vector_element_type(self) -> ValueType:
@@ -182,7 +181,7 @@ struct ValueType:
 
     @always_inline
     fn fixed_typed_vector_element_size(self) -> Int:
-        return ((self - ValueType.VectorInt2) // 3).value.to_int() + 2
+        return int(((self - ValueType.VectorInt2) // 3).value) + 2
 
     @always_inline
     fn packed_type(self, bit_width: ValueBitWidth) -> UInt8:
@@ -228,7 +227,7 @@ struct StackValue(CollectionElement):
             var v1 = bitcast[DType.uint8, 2](v)
             @parameter
             if is_be:
-                v1 = bswap(v1)
+                v1 = byte_swap(v1)
             value[0] = v1[0]
             value[1] = v1[1]
             return StackValue(value, ValueBitWidth.of(v), ValueType.of[D]())
@@ -236,7 +235,7 @@ struct StackValue(CollectionElement):
             var v1 = bitcast[DType.uint8, 4](v)
             @parameter
             if is_be:
-                v1 = bswap(v1)
+                v1 = byte_swap(v1)
             value[0] = v1[0]
             value[1] = v1[1]
             value[2] = v1[2]
@@ -246,7 +245,7 @@ struct StackValue(CollectionElement):
             var v1 = bitcast[DType.uint8, 8](v)
             @parameter
             if is_be:
-                v1 = bswap(v1)
+                v1 = byte_swap(v1)
             return StackValue(bitcast[DType.uint8, 8](v), ValueBitWidth.of(v), ValueType.of[D]())
 
     @staticmethod
@@ -273,7 +272,7 @@ struct StackValue(CollectionElement):
             var width = UInt64(1 << i)
             var offset_loc = size + padding_size(size, width) + UInt64(index * width)
             var offset = offset_loc - self.as_uint()
-            var bit_width = ValueBitWidth.of(offset.to_int())
+            var bit_width = ValueBitWidth.of(int(offset))
             if (1 << bit_width.value).cast[DType.uint64]() == width:
                 return bit_width
 

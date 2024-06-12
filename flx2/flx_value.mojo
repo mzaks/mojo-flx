@@ -1,6 +1,5 @@
 from .data_types import ValueType, ValueBitWidth, is_be
-from math.bit import bswap
-from math import max
+from bit import byte_swap
 
 struct FlxValue(Sized):
     var _bytes: DTypePointer[DType.uint8]
@@ -25,9 +24,9 @@ struct FlxValue(Sized):
     fn __init__(inout self, bytes: DTypePointer[DType.uint8], length: Int) raises:
         if length < 3:
             raise "Length should be at least 3, was: " + String(length)
-        var parent_byte_width = bytes.load(length - 1)
-        var packed_type = bytes.load(length - 2)
-        var offset = length - parent_byte_width.to_int() - 2
+        var parent_byte_width = bytes[length - 1]
+        var packed_type = bytes[length - 2]
+        var offset = length - int(parent_byte_width) - 2
         self._bytes = bytes.offset(offset)
         self._parent_byte_width = parent_byte_width
         self._byte_width = 1 << (packed_type & 3)
@@ -38,9 +37,9 @@ struct FlxValue(Sized):
         var length = bytes_and_length.get[1, Int]()
         if length < 3:
             raise "Length should be at least 3, was: " + String(length)
-        var parent_byte_width = bytes.load(length - 1)
-        var packed_type = bytes.load(length - 2)
-        var offset = length - parent_byte_width.to_int() - 2
+        var parent_byte_width = bytes[length - 1]
+        var packed_type = bytes[length - 2]
+        var offset = length - int(parent_byte_width) - 2
         self._bytes = bytes.offset(offset)
         self._parent_byte_width = parent_byte_width
         self._byte_width = 1 << (packed_type & 3)
@@ -62,7 +61,7 @@ struct FlxValue(Sized):
         if self._type == ValueType.Key:
             var p = jump_to_indirect(self._bytes, self._parent_byte_width)
             var size = 0
-            while p.offset(size).load() != 0:
+            while p[size] != 0:
                 size += 1
         return 1
 
@@ -109,14 +108,14 @@ struct FlxValue(Sized):
     @always_inline
     fn get[D: DType](self) raises -> SIMD[D, 1]:
         if self._type != ValueType.of[D]():
-            raise "Value is not of type " + D.__str__() + " type id: " + String(self._type.value)
-        if sizeof[D]() != self._parent_byte_width.to_int():
-            raise "Value byte width is " + String(self._parent_byte_width.to_int()) + " which does not conform with " + D.__str__()
+            raise "Value is not of type " + D.__str__() + " type id: " + str(self._type.value)
+        if sizeof[D]() != int(self._parent_byte_width):
+            raise "Value byte width is " + String(int(self._parent_byte_width)) + " which does not conform with " + D.__str__()
         @parameter
         if is_be:
-            return bswap(self._bytes.bitcast[D]().load())
+            return byte_swap(self._bytes.bitcast[D]()[])
         else:    
-            return self._bytes.bitcast[D]().load()
+            return self._bytes.bitcast[D]()[]
 
     @always_inline
     fn int(self) raises -> Int:
@@ -130,7 +129,7 @@ struct FlxValue(Sized):
         if self._type == ValueType.IndirectUInt:
             var p = jump_to_indirect(self._bytes, self._parent_byte_width)
             return read_uint(p, self._byte_width)
-        raise "Type is not an int or uint, type id: " + String(self._type.value)
+        raise "Type is not an int or uint, type id: " + str(self._type.value)
 
     @always_inline
     fn float(self) raises -> Float64:
@@ -139,13 +138,13 @@ struct FlxValue(Sized):
         if self._type == ValueType.IndirectFloat:
             var p = jump_to_indirect(self._bytes, self._parent_byte_width)
             return read_float(p, self._byte_width)
-        raise "Type is not a float, type id: " + String(self._type.value)
+        raise "Type is not a float, type id: " + str(self._type.value)
 
     @always_inline
     fn bool(self) raises -> Bool:
         if self._type == ValueType.Bool:
             return read_uint(self._bytes, self._parent_byte_width) == 1
-        raise "Type is not a bool, type id: " + String(self._type.value)
+        raise "Type is not a bool, type id: " + str(self._type.value)
 
     @always_inline
     fn string(self) raises -> StringRef:
@@ -154,19 +153,19 @@ struct FlxValue(Sized):
             var size: Int
             var size_width: Int
             size, size_width = read_size(p) 
-            return StringRef(p.offset(size_width).bitcast[DType.int8](), size)
+            return StringRef(p.offset(size_width), size)
         if self._type == ValueType.Key:
             var p = jump_to_indirect(self._bytes, self._parent_byte_width)
             var size = 0
-            while p.offset(size).load() != 0:
+            while p[size] != 0:
                 size += 1
-            return StringRef(p.bitcast[DType.int8]())
-        raise "Type is not convertable to string, type id: " + String(self._type.value)
+            return StringRef(p)
+        raise "Type is not convertable to string, type id: " + str(self._type.value)
 
     @always_inline
     fn blob(self) raises -> (DTypePointer[DType.uint8], Int):
         if not self.is_blob():
-            raise "Type is not blob, type id: " + String(self._type.value)
+            raise "Type is not blob, type id: " + str(self._type.value)
         var p = jump_to_indirect(self._bytes, self._parent_byte_width)
         var size: Int
         var size_width: Int
@@ -176,7 +175,7 @@ struct FlxValue(Sized):
     @always_inline
     fn vec(self) raises -> FlxVecValue:
         if not self._type.is_a_vector():
-            raise "Value is not a vector. Type id: " + String(self._type.value)
+            raise "Value is not a vector. Type id: " + str(self._type.value)
         var p  = jump_to_indirect(self._bytes, self._parent_byte_width)
         var size: Int
         var size_width: Int
@@ -186,7 +185,7 @@ struct FlxValue(Sized):
     @always_inline
     fn map(self) raises -> FlxMapValue:
         if self._type != ValueType.Map:
-            raise "Value is not a map. Type id: " + String(self._type.value)
+            raise "Value is not a map. Type id: " + str(self._type.value)
         var p  = jump_to_indirect(self._bytes, self._parent_byte_width)
         var size: Int
         var size_width: Int
@@ -222,7 +221,7 @@ struct FlxValue(Sized):
             return self.vec().json()
         if self.is_map():
             return self.map().json()
-        raise "Unexpected type id: " + String(self._type.value)
+        raise "Unexpected type id: " + str(self._type.value)
 
 
 struct FlxVecValue(Sized):
@@ -248,26 +247,26 @@ struct FlxVecValue(Sized):
             raise "Bad index: " + String(index) + ". Lenght: " + String(self._length)
         if self._type.is_typed_vector():
             return FlxValue(
-                self._bytes.offset(index * self._byte_width.to_int()),
+                self._bytes.offset(index * int(self._byte_width)),
                 self._byte_width,
                 1,
                 self._type.typed_vector_element_type()
             )
         if self._type.is_fixed_typed_vector():
             return FlxValue(
-                self._bytes.offset(index * self._byte_width.to_int()),
+                self._bytes.offset(index * int(self._byte_width)),
                 self._byte_width,
                 1,
                 self._type.fixed_typed_vector_element_type()
             )
         if self._type == ValueType.Vector:
-            var packed_type = self._bytes.offset(self._length * self._byte_width.to_int() + index).load()
+            var packed_type = self._bytes.offset(self._length * int(self._byte_width) + index)[]
             return FlxValue(
-                self._bytes.offset(index * self._byte_width.to_int()),
+                self._bytes.offset(index * int(self._byte_width)),
                 self._byte_width,
                 packed_type
             )
-        raise "Is not an expected vector type. Type id: " + String(self._type.value)
+        raise "Is not an expected vector type. Type id: " + str(self._type.value)
 
     fn json(self) raises -> String:
         var result: String = "["
@@ -302,10 +301,10 @@ struct FlxMapValue(Sized):
 
     @always_inline
     fn keys(self) -> FlxVecValue:
-        var p1 = self._bytes.offset(self._byte_width.to_int() * -3)
+        var p1 = self._bytes.offset(int(self._byte_width) * -3)
         var p2 = jump_to_indirect(p1, self._byte_width)
-        var byte_width = read_uint(p1.offset(self._byte_width.to_int()), self._byte_width)
-        return FlxVecValue(p2.offset(max(byte_width, 1 << ValueBitWidth.of(self._length).value.to_int())), byte_width, ValueType.VectorKey, self._length)
+        var byte_width = read_uint(p1.offset(int(self._byte_width)), self._byte_width)
+        return FlxVecValue(p2.offset(max(byte_width, 1 << int(ValueBitWidth.of(self._length).value))), byte_width, ValueType.VectorKey, self._length)
     
     @always_inline
     fn values(self) -> FlxVecValue:
@@ -313,7 +312,7 @@ struct FlxMapValue(Sized):
 
     @always_inline
     fn key_index(self, key: String) raises -> Int:
-        var a = key._as_ptr().bitcast[DType.uint8]()
+        var a = key.unsafe_ptr().bitcast[UInt8]()
         var keys = self.keys()
         var low = 0
         var high = self._length - 1
@@ -348,98 +347,98 @@ fn jump_to_indirect(bytes: DTypePointer[DType.uint8], byte_width: UInt8) -> DTyp
 
 @always_inline
 fn read_size(bytes: DTypePointer[DType.uint8]) -> Tuple[Int, Int]:
-    var val = bytes.bitcast[DType.uint64]().load()
-    var byte_width = (val & 3).to_int() + 1
+    var val = bytes.bitcast[DType.uint64]()[]
+    var byte_width = int(val & 3) + 1
     var mask = (1 << (byte_width << 3)) - 1
-    return ((val & mask) >> 2).to_int(), byte_width
+    return int((val & mask) >> 2), byte_width
     # Below is a safer version, do not delete yet:
-    # var val = bytes.load()
+    # var val = bytes[]
     # var byte_width = (val & 3).to_int() + 1
     # if byte_width > 2:
     #     if byte_width == 4:
-    #         return (bytes.bitcast[DType.uint32]().load() >> 2).to_int(), byte_width
-    #     return (bytes.bitcast[DType.uint64]().load() >> 2).to_int(), byte_width
+    #         return (bytes.bitcast[DType.uint32]()[] >> 2).to_int(), byte_width
+    #     return (bytes.bitcast[DType.uint64]()[] >> 2).to_int(), byte_width
     # else:
     #     if byte_width == 2:
-    #         return (bytes.bitcast[DType.uint16]().load() >> 2).to_int(), byte_width
+    #         return (bytes.bitcast[DType.uint16]()[] >> 2).to_int(), byte_width
     #     return (val >> 2).to_int(), byte_width
 
 @always_inline
 fn read_uint(bytes: DTypePointer[DType.uint8], byte_width: UInt8) -> Int:
     if byte_width < 4:
         if byte_width == 1:
-            return bytes.load().to_int()
+            return int(bytes)
         else:
             @parameter
             if is_be:
-                return bswap(bytes.bitcast[DType.uint16]().load()).to_int()
+                return int(byte_swap(bytes.bitcast[DType.uint16]()[]))
             else:
-                return bytes.bitcast[DType.uint16]().load().to_int()
+                return int(bytes.bitcast[DType.uint16]()[])
     else:
         if byte_width == 4:
             @parameter
             if is_be:
-                return bswap(bytes.bitcast[DType.uint32]().load()).to_int()
+                return int(byte_swap(bytes.bitcast[DType.uint32]()[]))
             else:
-                return bytes.bitcast[DType.uint32]().load().to_int()
+                return int(bytes.bitcast[DType.uint32]()[])
         else:
             @parameter
             if is_be:
-                return bswap(bytes.bitcast[DType.uint64]().load()).to_int()
+                return int(byte_swap(bytes.bitcast[DType.uint64]()[]))
             else:
-                return bytes.bitcast[DType.uint64]().load().to_int()
+                return int(bytes.bitcast[DType.uint64]()[])
 
 @always_inline
 fn read_int(bytes: DTypePointer[DType.uint8], byte_width: UInt8) -> Int:
     if byte_width < 4:
         if byte_width == 1:
-            return bytes.bitcast[DType.int8]().load().to_int()
+            return int(bytes.bitcast[DType.int8]()[])
         else:
             @parameter
             if is_be:
-                return bswap(bytes.bitcast[DType.int16]().load()).to_int()
+                return int(byte_swap(bytes.bitcast[DType.int16]()[]))
             else:
-                return bytes.bitcast[DType.int16]().load().to_int()
+                return int(bytes.bitcast[DType.int16]()[])
     else:
         if byte_width == 4:
             @parameter
             if is_be:
-                return bswap(bytes.bitcast[DType.int32]().load()).to_int()
+                return int(byte_swap(bytes.bitcast[DType.int32]()[]))
             else:
-                return bytes.bitcast[DType.int32]().load().to_int()
+                return int(bytes.bitcast[DType.int32]()[])
         else:
             @parameter
             if is_be:
-                return bswap(bytes.bitcast[DType.int64]().load()).to_int()
+                return int(byte_swap(bytes.bitcast[DType.int64]()[]))
             else:
-                return bytes.bitcast[DType.int64]().load().to_int()
+                return int(bytes.bitcast[DType.int64]()[])
 
 @always_inline
 fn read_float(bytes: DTypePointer[DType.uint8], byte_width: UInt8) raises -> Float64:
     if byte_width == 8:
         @parameter
         if is_be:
-            return bswap(bytes.bitcast[DType.float64]().load())
+            return byte_swap(bytes.bitcast[DType.float64]()[])
         else:
-            return bytes.bitcast[DType.float64]().load()
+            return bytes.bitcast[DType.float64]()[]
     if byte_width == 4:
         @parameter
         if is_be:
-            return bswap(bytes.bitcast[DType.float32]().load()).cast[DType.float64]()
+            return byte_swap(bytes.bitcast[DType.float32]()[]).cast[DType.float64]()
         else:
-            return bytes.bitcast[DType.float32]().load().cast[DType.float64]()
+            return bytes.bitcast[DType.float32]()[].cast[DType.float64]()
     if byte_width == 2:
         @parameter
         if is_be:
-            return bswap(bytes.bitcast[DType.float16]().load()).cast[DType.float64]()
+            return byte_swap(bytes.bitcast[DType.float16]()[]).cast[DType.float64]()
         else:
-            return bytes.bitcast[DType.float16]().load().cast[DType.float64]()
-    raise "Unexpected byte width: " + String(byte_width)
+            return bytes.bitcast[DType.float16]()[].cast[DType.float64]()
+    raise "Unexpected byte width: " + str(byte_width)
 
 @always_inline
 fn cmp(a: DTypePointer[DType.uint8], b: DTypePointer[DType.uint8], length: Int) -> Int:
     for i in range(length):
-        var diff = a.load(i).to_int() - b.load(i).to_int()
+        var diff = int(a[i]) - int(b[i])
         if diff != 0:
             return diff
     return 0
